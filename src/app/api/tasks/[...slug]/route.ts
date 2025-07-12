@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { kv } from "@vercel/kv";
-import fs from "fs/promises";
-import path from "path";
+import { Redis } from "@upstash/redis";
 
 interface Task {
   id: string;
@@ -9,36 +7,28 @@ interface Task {
   completed: boolean;
 }
 
-// Check if we're in production (Vercel) or development
-const isProduction = process.env.NODE_ENV === "production";
+// Initialize Redis client
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
 
 async function readDb(): Promise<Record<string, Task[]>> {
-  if (isProduction) {
-    try {
-      const data = await kv.get<Record<string, Task[]>>("tasks");
-      return data || {};
-    } catch {
-      return {};
-    }
-  } else {
-    // Development: use file system
-    try {
-      const dbPath = path.resolve(process.cwd(), "db/tasks.json");
-      const data = await fs.readFile(dbPath, "utf-8");
-      return JSON.parse(data);
-    } catch {
-      return {};
-    }
+  try {
+    const data = await redis.get<Record<string, Task[]>>("tasks");
+    return data || {};
+  } catch (error) {
+    console.error("Redis read error:", error);
+    return {};
   }
 }
 
 async function writeDb(data: Record<string, Task[]>) {
-  if (isProduction) {
-    await kv.set("tasks", data);
-  } else {
-    // Development: use file system
-    const dbPath = path.resolve(process.cwd(), "db/tasks.json");
-    await fs.writeFile(dbPath, JSON.stringify(data, null, 2));
+  try {
+    await redis.set("tasks", data);
+  } catch (error) {
+    console.error("Redis write error:", error);
+    throw new Error("Failed to save data");
   }
 }
 
