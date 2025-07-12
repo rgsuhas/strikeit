@@ -71,18 +71,16 @@ export async function PUT(
 
   const db = await readDb();
   let tasks: Task[] = db[key] || [];
-  tasks = tasks
-    .map((task) => {
-      if (task.id === id) {
-        return {
-          ...task,
-          ...(text !== undefined && { text }),
-          ...(completed !== undefined && { completed }),
-        };
-      }
-      return task;
-    })
-    .filter((task) => !task.completed);
+  tasks = tasks.map((task) => {
+    if (task.id === id) {
+      return {
+        ...task,
+        ...(text !== undefined && { text }),
+        ...(completed !== undefined && { completed }),
+      };
+    }
+    return task;
+  });
   db[key] = tasks;
   await writeDb(db);
 
@@ -95,12 +93,20 @@ export async function DELETE(
 ) {
   const { slug } = await params;
   const key = slug.join("/");
-  const { id } = await request.json();
+  const { id, reset } = await request.json();
 
   const db = await readDb();
-  let tasks: Task[] = db[key] || [];
-  tasks = tasks.filter((task) => task.id !== id);
-  db[key] = tasks;
+  
+  if (reset) {
+    // Reset entire list
+    db[key] = [];
+  } else {
+    // Delete specific task
+    let tasks: Task[] = db[key] || [];
+    tasks = tasks.filter((task) => task.id !== id);
+    db[key] = tasks;
+  }
+  
   await writeDb(db);
 
   return NextResponse.json({ success: true });

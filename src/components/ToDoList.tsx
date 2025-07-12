@@ -66,7 +66,7 @@ export default function ToDoList({ listKey }: { listKey: string }) {
         body: JSON.stringify({ id, completed }),
       });
       if (!res.ok) throw new Error();
-      setTasks(t => t.filter(task => task.id !== id));
+      setTasks(t => t.map(task => task.id === id ? { ...task, completed } : task));
       setLastModified(new Date());
     } catch {
       setError("Failed to update task");
@@ -125,9 +125,49 @@ export default function ToDoList({ listKey }: { listKey: string }) {
     alert("URL copied to clipboard!");
   };
 
+  const handleReset = async () => {
+    if (!confirm("Are you sure you want to delete all tasks in this list?")) {
+      return;
+    }
+    
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/tasks/${listKey}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reset: true }),
+      });
+      if (!res.ok) throw new Error();
+      setTasks([]);
+      setLastModified(new Date());
+    } catch {
+      setError("Failed to reset list");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <main style={{ maxWidth: 400, margin: "2rem auto", padding: 16 }}>
-      <h1>To-Do List: <span style={{ fontWeight: 400 }}>{listKey}</span></h1>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <h1>To-Do List: <span style={{ fontWeight: 400 }}>{listKey}</span></h1>
+        <button 
+          onClick={handleReset} 
+          disabled={loading}
+          style={{
+            padding: "6px 12px",
+            fontSize: 14,
+            borderRadius: 4,
+            border: "1px solid #dc2626",
+            background: "#dc2626",
+            color: "#fff",
+            cursor: "pointer",
+          }}
+        >
+          Reset List
+        </button>
+      </div>
       <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
         <input
           value={input}
@@ -149,7 +189,19 @@ export default function ToDoList({ listKey }: { listKey: string }) {
       {loading && <div style={{ marginTop: 8 }}>Loading...</div>}
       <ul style={{ listStyle: "none", padding: 0, marginTop: 24 }}>
         {tasks.map(task => (
-          <li key={task.id} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+          <li 
+            key={task.id} 
+            style={{ 
+              display: "flex", 
+              alignItems: "center", 
+              gap: 8, 
+              marginBottom: 8,
+              padding: "8px",
+              borderRadius: "4px",
+              background: task.completed ? "#f3f4f6" : "transparent",
+              opacity: task.completed ? 0.7 : 1
+            }}
+          >
             <input
               type="checkbox"
               checked={task.completed}
@@ -171,7 +223,11 @@ export default function ToDoList({ listKey }: { listKey: string }) {
             ) : (
               <>
                 <span
-                  style={{ textDecoration: task.completed ? "line-through" : undefined, flex: 1 }}
+                  style={{ 
+                    textDecoration: task.completed ? "line-through" : undefined, 
+                    flex: 1,
+                    color: task.completed ? "#6b7280" : "inherit"
+                  }}
                 >
                   {task.text}
                 </span>
