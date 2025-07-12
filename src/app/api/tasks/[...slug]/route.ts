@@ -24,23 +24,22 @@ async function writeDb(data: Record<string, Task[]>) {
   await fs.writeFile(dbPath, JSON.stringify(data, null, 2));
 }
 
-interface RouteContext {
-  params: { slug: string[]; };
-}
-
-export async function GET(_req: NextRequest, _context: RouteContext) {
-  const key = _context.params.slug.join("/");
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: { slug: string[] } }
+) {
+  const key = params.slug.join("/");
   const db = await readDb();
   const tasks: Task[] = db[key] || [];
   return NextResponse.json(tasks);
 }
 
 export async function POST(
-  req: NextRequest,
-  context: RouteContext
+  request: NextRequest,
+  { params }: { params: { slug: string[] } }
 ) {
-  const key = context.params.slug.join("/");
-  const { text } = await req.json();
+  const key = params.slug.join("/");
+  const { text } = await request.json();
   const newTask: Task = { id: Date.now().toString(), text, completed: false };
 
   const db = await readDb();
@@ -53,11 +52,11 @@ export async function POST(
 }
 
 export async function PUT(
-  req: NextRequest,
-  context: RouteContext
+  request: NextRequest,
+  { params }: { params: { slug: string[] } }
 ) {
-  const key = context.params.slug.join("/");
-  const { id, text, completed } = await req.json();
+  const key = params.slug.join("/");
+  const { id, text, completed } = await request.json();
 
   const db = await readDb();
   let tasks: Task[] = db[key] || [];
@@ -80,11 +79,11 @@ export async function PUT(
 }
 
 export async function DELETE(
-  req: NextRequest,
-  context: RouteContext
+  request: NextRequest,
+  { params }: { params: { slug: string[] } }
 ) {
-  const key = context.params.slug.join("/");
-  const { id } = await req.json();
+  const key = params.slug.join("/");
+  const { id } = await request.json();
 
   const db = await readDb();
   let tasks: Task[] = db[key] || [];
