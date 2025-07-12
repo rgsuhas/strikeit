@@ -34,7 +34,7 @@ function checkRateLimit(ip: string) {
 async function readStore(listKey: string): Promise<Task[]> {
   const data = await redis.get<string>(`list:${listKey}`);
   console.log(`[readStore] listKey: list:${listKey}, data:`, data);
-  if (!data || data.trim() === "") return [];
+  if (typeof data !== "string" || data.trim() === "") return [];
   try {
     return JSON.parse(data) as Task[];
   } catch (e) {
