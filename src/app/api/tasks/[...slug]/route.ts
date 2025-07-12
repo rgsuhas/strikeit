@@ -73,10 +73,11 @@ export async function POST(req: NextRequest, { params }: any) {
     return NextResponse.json({ error: "Invalid text" }, { status: 400 });
   }
   console.log(`[POST] Adding task to listKey: list:${listKey}, text:`, text);
-  const tasks = await readStore(listKey);
-  const newTask = { id: Date.now().toString(), text, completed: false };
-  const updated = [...tasks, newTask];
-  await writeStore(listKey, updated);
+  const db = await readDb();
+  const tasks = db[key] || [];
+  tasks.push(newTask);
+  db[key] = tasks;
+  await writeDb(db);
   return NextResponse.json(newTask);
 }
 
@@ -90,11 +91,22 @@ export async function PUT(req: NextRequest, { params }: any) {
   const { id, text, completed } = await req.json();
   if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
   console.log(`[PUT] Updating task in listKey: list:${listKey}, id:`, id, 'text:', text, 'completed:', completed);
-  const tasks = await readStore(listKey);
-  const updated = tasks.map(t =>
-    t.id === id ? { ...t, text: text ?? t.text, completed: completed ?? t.completed } : t
-  );
-  await writeStore(listKey, updated);
+  const db = await readDb();
+  let tasks = db[key] || [];
+  tasks = tasks
+    .map((task: any) => {
+      if (task.id === id) {
+        return {
+          ...task,
+          ...(text !== undefined && { text }),
+          ...(completed !== undefined && { completed }),
+        };
+      }
+      return task;
+    })
+    .filter((task: any) => !task.completed);
+  db[key] = tasks;
+  await writeDb(db);
   return NextResponse.json({ success: true });
 }
 
@@ -108,8 +120,10 @@ export async function DELETE(req: NextRequest, { params }: any) {
   const { id } = await req.json();
   if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
   console.log(`[DELETE] Deleting task from listKey: list:${listKey}, id:`, id);
-  const tasks = await readStore(listKey);
-  const updated = tasks.filter(t => t.id !== id);
-  await writeStore(listKey, updated);
+  const db = await readDb();
+  let tasks = db[key] || [];
+  tasks = tasks.filter((task: any) => task.id !== id);
+  db[key] = tasks;
+  await writeDb(db);
   return NextResponse.json({ success: true });
 }

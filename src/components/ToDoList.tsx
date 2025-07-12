@@ -66,7 +66,7 @@ export default function ToDoList({ listKey }: { listKey: string }) {
         body: JSON.stringify({ id, completed }),
       });
       if (!res.ok) throw new Error();
-      setTasks(t => t.map(task => task.id === id ? { ...task, completed } : task));
+      setTasks(t => t.filter(task => task.id !== id));
       setLastModified(new Date());
     } catch {
       setError("Failed to update task");
