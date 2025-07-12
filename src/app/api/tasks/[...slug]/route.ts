@@ -34,18 +34,19 @@ function checkRateLimit(ip: string) {
 async function readStore(listKey: string): Promise<Task[]> {
   const data = await redis.get<string>(`list:${listKey}`);
   console.log(`[readStore] listKey: list:${listKey}, data:`, data);
-  if (!data) return [];
+  if (!data || data.trim() === "") return [];
   try {
     return JSON.parse(data) as Task[];
   } catch (e) {
-    console.error(`[readStore] JSON parse error for key list:${listKey}:`, e);
+    console.error(`[readStore] JSON parse error for key list:${listKey}:`, e, 'Raw data:', data);
     return [];
   }
 }
 
 async function writeStore(listKey: string, tasks: Task[]) {
-  console.log(`[writeStore] listKey: list:${listKey}, writing:`, tasks);
-  await redis.set(`list:${listKey}`, JSON.stringify(tasks));
+  const safeTasks = Array.isArray(tasks) ? tasks : [];
+  console.log(`[writeStore] listKey: list:${listKey}, writing:`, safeTasks);
+  await redis.set(`list:${listKey}`, JSON.stringify(safeTasks));
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
