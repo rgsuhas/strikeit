@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { promises as fs } from "fs";
-import path from "path";
+import { kv } from "@vercel/kv";
 
-const DB_PATH = path.join(process.cwd(), "db", "tasks.json");
 const RATE_LIMIT = 10;
 const RATE_WINDOW = 60 * 1000; // 1 minute
 const ipHits: Record<string, { count: number; start: number }> = {};
 
 type Task = { id: string; text: string; completed: boolean };
-type Store = Record<string, Task[]>;
 
 function getListKey(slug: string[] | undefined) {
   return (slug && slug.length > 0 ? slug.join("/") : "home");
@@ -31,17 +28,18 @@ function checkRateLimit(ip: string) {
   return false;
 }
 
-async function readStore(): Promise<Store> {
+async function readStore(listKey: string): Promise<Task[]> {
+  const data = await kv.get<string>(`list:${listKey}`);
+  if (!data) return [];
   try {
-    const data = await fs.readFile(DB_PATH, "utf8");
-    return JSON.parse(data || "{}") as Store;
+    return JSON.parse(data) as Task[];
   } catch {
-    return {};
+    return [];
   }
 }
 
-async function writeStore(store: Store) {
-  await fs.writeFile(DB_PATH, JSON.stringify(store, null, 2), "utf8");
+async function writeStore(listKey: string, tasks: Task[]) {
+  await kv.set(`list:${listKey}`, JSON.stringify(tasks));
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
@@ -50,9 +48,9 @@ export async function GET(req: NextRequest, { params }: any) {
   if (checkRateLimit(ip)) {
     return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
   }
-  const key = getListKey(params?.slug);
-  const store = await readStore();
-  return NextResponse.json(store[key] || []);
+  const listKey = getListKey(params?.slug);
+  const tasks = await readStore(listKey);
+  return NextResponse.json(tasks);
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
@@ -61,15 +59,15 @@ export async function POST(req: NextRequest, { params }: any) {
   if (checkRateLimit(ip)) {
     return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
   }
-  const key = getListKey(params?.slug);
+  const listKey = getListKey(params?.slug);
   const { text } = await req.json();
   if (!text || typeof text !== "string") {
     return NextResponse.json({ error: "Invalid text" }, { status: 400 });
   }
-  const store = await readStore();
+  const tasks = await readStore(listKey);
   const newTask = { id: Date.now().toString(), text, completed: false };
-  store[key] = [...(store[key] || []), newTask];
-  await writeStore(store);
+  const updated = [...tasks, newTask];
+  await writeStore(listKey, updated);
   return NextResponse.json(newTask);
 }
 
@@ -79,14 +77,14 @@ export async function PUT(req: NextRequest, { params }: any) {
   if (checkRateLimit(ip)) {
     return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
   }
-  const key = getListKey(params?.slug);
+  const listKey = getListKey(params?.slug);
   const { id, text, completed } = await req.json();
   if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
-  const store = await readStore();
-  store[key] = (store[key] || []).map(t =>
+  const tasks = await readStore(listKey);
+  const updated = tasks.map(t =>
     t.id === id ? { ...t, text: text ?? t.text, completed: completed ?? t.completed } : t
   );
-  await writeStore(store);
+  await writeStore(listKey, updated);
   return NextResponse.json({ success: true });
 }
 
@@ -96,11 +94,11 @@ export async function DELETE(req: NextRequest, { params }: any) {
   if (checkRateLimit(ip)) {
     return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
   }
-  const key = getListKey(params?.slug);
+  const listKey = getListKey(params?.slug);
   const { id } = await req.json();
   if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
-  const store = await readStore();
-  store[key] = (store[key] || []).filter(t => t.id !== id);
-  await writeStore(store);
+  const tasks = await readStore(listKey);
+  const updated = tasks.filter(t => t.id !== id);
+  await writeStore(listKey, updated);
   return NextResponse.json({ success: true });
 }
