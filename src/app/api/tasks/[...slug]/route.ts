@@ -28,8 +28,8 @@ interface RouteContext {
   params: { slug: string[]; };
 }
 
-export async function GET(req: NextRequest, context: RouteContext) {
-  const key = context.params.slug.join("/");
+export async function GET(_req: NextRequest, _context: RouteContext) {
+  const key = _context.params.slug.join("/");
   const db = await readDb();
   const tasks: Task[] = db[key] || [];
   return NextResponse.json(tasks);
