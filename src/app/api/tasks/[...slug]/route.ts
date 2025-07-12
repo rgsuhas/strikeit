@@ -1,100 +1,68 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Redis } from "@upstash/redis";
+import fs from "fs/promises";
+import path from "path";
 
-// Initialize Redis
-const redis = Redis.fromEnv();
+const dbPath = path.resolve(process.cwd(), "db/tasks.json");
 
-const RATE_LIMIT = 10;
-const RATE_WINDOW = 60 * 1000; // 1 minute
-const ipHits: Record<string, { count: number; start: number }> = {};
-
-type Task = { id: string; text: string; completed: boolean };
-
-function getListKey(slug: string[] | undefined) {
-  return (slug && slug.length > 0 ? slug.join("/") : "home");
+interface Task {
+  id: string;
+  text: string;
+  completed: boolean;
 }
 
-function getIP(req: NextRequest) {
-  return req.headers.get("x-forwarded-for") || "unknown";
-}
-
-function checkRateLimit(ip: string) {
-  const now = Date.now();
-  if (!ipHits[ip] || now - ipHits[ip].start > RATE_WINDOW) {
-    ipHits[ip] = { count: 1, start: now };
-    return false;
-  }
-  if (ipHits[ip].count >= RATE_LIMIT) {
-    return true;
-  }
-  ipHits[ip].count++;
-  return false;
-}
-
-async function readStore(listKey: string): Promise<Task[]> {
-  const data = await redis.get<string>(`list:${listKey}`);
-  console.log(`[readStore] listKey: list:${listKey}, data:`, data);
-  if (typeof data !== "string" || data.trim() === "") return [];
+async function readDb(): Promise<Record<string, Task[]>> {
   try {
-    return JSON.parse(data) as Task[];
-  } catch (e) {
-    console.error(`[readStore] JSON parse error for key list:${listKey}:`, e, 'Raw data:', data);
-    return [];
+    const data = await fs.readFile(dbPath, "utf-8");
+    return JSON.parse(data);
+  } catch {
+    // If file doesn't exist, return empty object
+    return {};
   }
 }
 
-async function writeStore(listKey: string, tasks: Task[]) {
-  const safeTasks = Array.isArray(tasks) ? tasks : [];
-  console.log(`[writeStore] listKey: list:${listKey}, writing:`, safeTasks);
-  await redis.set(`list:${listKey}`, JSON.stringify(safeTasks));
+async function writeDb(data: Record<string, Task[]>) {
+  await fs.writeFile(dbPath, JSON.stringify(data, null, 2));
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-export async function GET(req: NextRequest, { params }: any) {
-  const ip = getIP(req);
-  if (checkRateLimit(ip)) {
-    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
-  }
-  const listKey = getListKey(params?.slug);
-  console.log(`[GET] Fetching tasks for listKey: list:${listKey}`);
-  const tasks = await readStore(listKey);
+interface RouteContext {
+  params: { slug: string[]; };
+}
+
+export async function GET(req: NextRequest, context: RouteContext) {
+  const key = context.params.slug.join("/");
+  const db = await readDb();
+  const tasks: Task[] = db[key] || [];
   return NextResponse.json(tasks);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-export async function POST(req: NextRequest, { params }: any) {
-  const ip = getIP(req);
-  if (checkRateLimit(ip)) {
-    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
-  }
-  const listKey = getListKey(params?.slug);
+export async function POST(
+  req: NextRequest,
+  context: RouteContext
+) {
+  const key = context.params.slug.join("/");
   const { text } = await req.json();
-  if (!text || typeof text !== "string") {
-    return NextResponse.json({ error: "Invalid text" }, { status: 400 });
-  }
-  console.log(`[POST] Adding task to listKey: list:${listKey}, text:`, text);
+  const newTask: Task = { id: Date.now().toString(), text, completed: false };
+
   const db = await readDb();
-  const tasks = db[key] || [];
+  const tasks: Task[] = db[key] || [];
   tasks.push(newTask);
   db[key] = tasks;
   await writeDb(db);
+
   return NextResponse.json(newTask);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-export async function PUT(req: NextRequest, { params }: any) {
-  const ip = getIP(req);
-  if (checkRateLimit(ip)) {
-    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
-  }
-  const listKey = getListKey(params?.slug);
+export async function PUT(
+  req: NextRequest,
+  context: RouteContext
+) {
+  const key = context.params.slug.join("/");
   const { id, text, completed } = await req.json();
-  if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
-  console.log(`[PUT] Updating task in listKey: list:${listKey}, id:`, id, 'text:', text, 'completed:', completed);
+
   const db = await readDb();
-  let tasks = db[key] || [];
+  let tasks: Task[] = db[key] || [];
   tasks = tasks
-    .map((task: any) => {
+    .map((task) => {
       if (task.id === id) {
         return {
           ...task,
@@ -104,26 +72,25 @@ export async function PUT(req: NextRequest, { params }: any) {
       }
       return task;
     })
-    .filter((task: any) => !task.completed);
+    .filter((task) => !task.completed);
   db[key] = tasks;
   await writeDb(db);
+
   return NextResponse.json({ success: true });
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-export async function DELETE(req: NextRequest, { params }: any) {
-  const ip = getIP(req);
-  if (checkRateLimit(ip)) {
-    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
-  }
-  const listKey = getListKey(params?.slug);
+export async function DELETE(
+  req: NextRequest,
+  context: RouteContext
+) {
+  const key = context.params.slug.join("/");
   const { id } = await req.json();
-  if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
-  console.log(`[DELETE] Deleting task from listKey: list:${listKey}, id:`, id);
+
   const db = await readDb();
-  let tasks = db[key] || [];
-  tasks = tasks.filter((task: any) => task.id !== id);
+  let tasks: Task[] = db[key] || [];
+  tasks = tasks.filter((task) => task.id !== id);
   db[key] = tasks;
   await writeDb(db);
+
   return NextResponse.json({ success: true });
 }
