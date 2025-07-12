@@ -33,15 +33,18 @@ function checkRateLimit(ip: string) {
 
 async function readStore(listKey: string): Promise<Task[]> {
   const data = await redis.get<string>(`list:${listKey}`);
+  console.log(`[readStore] listKey: list:${listKey}, data:`, data);
   if (!data) return [];
   try {
     return JSON.parse(data) as Task[];
-  } catch {
+  } catch (e) {
+    console.error(`[readStore] JSON parse error for key list:${listKey}:`, e);
     return [];
   }
 }
 
 async function writeStore(listKey: string, tasks: Task[]) {
+  console.log(`[writeStore] listKey: list:${listKey}, writing:`, tasks);
   await redis.set(`list:${listKey}`, JSON.stringify(tasks));
 }
 
@@ -52,6 +55,7 @@ export async function GET(req: NextRequest, { params }: any) {
     return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
   }
   const listKey = getListKey(params?.slug);
+  console.log(`[GET] Fetching tasks for listKey: list:${listKey}`);
   const tasks = await readStore(listKey);
   return NextResponse.json(tasks);
 }
@@ -67,6 +71,7 @@ export async function POST(req: NextRequest, { params }: any) {
   if (!text || typeof text !== "string") {
     return NextResponse.json({ error: "Invalid text" }, { status: 400 });
   }
+  console.log(`[POST] Adding task to listKey: list:${listKey}, text:`, text);
   const tasks = await readStore(listKey);
   const newTask = { id: Date.now().toString(), text, completed: false };
   const updated = [...tasks, newTask];
@@ -83,6 +88,7 @@ export async function PUT(req: NextRequest, { params }: any) {
   const listKey = getListKey(params?.slug);
   const { id, text, completed } = await req.json();
   if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+  console.log(`[PUT] Updating task in listKey: list:${listKey}, id:`, id, 'text:', text, 'completed:', completed);
   const tasks = await readStore(listKey);
   const updated = tasks.map(t =>
     t.id === id ? { ...t, text: text ?? t.text, completed: completed ?? t.completed } : t
@@ -100,6 +106,7 @@ export async function DELETE(req: NextRequest, { params }: any) {
   const listKey = getListKey(params?.slug);
   const { id } = await req.json();
   if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+  console.log(`[DELETE] Deleting task from listKey: list:${listKey}, id:`, id);
   const tasks = await readStore(listKey);
   const updated = tasks.filter(t => t.id !== id);
   await writeStore(listKey, updated);
