@@ -26,9 +26,10 @@ async function writeDb(data: Record<string, Task[]>) {
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { slug: string[] } }
+  { params }: { params: Promise<{ slug: string[] }> }
 ) {
-  const key = params.slug.join("/");
+  const { slug } = await params;
+  const key = slug.join("/");
   const db = await readDb();
   const tasks: Task[] = db[key] || [];
   return NextResponse.json(tasks);
@@ -36,9 +37,10 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { slug: string[] } }
+  { params }: { params: Promise<{ slug: string[] }> }
 ) {
-  const key = params.slug.join("/");
+  const { slug } = await params;
+  const key = slug.join("/");
   const { text } = await request.json();
   const newTask: Task = { id: Date.now().toString(), text, completed: false };
 
@@ -53,9 +55,10 @@ export async function POST(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { slug: string[] } }
+  { params }: { params: Promise<{ slug: string[] }> }
 ) {
-  const key = params.slug.join("/");
+  const { slug } = await params;
+  const key = slug.join("/");
   const { id, text, completed } = await request.json();
 
   const db = await readDb();
@@ -80,9 +83,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { slug: string[] } }
+  { params }: { params: Promise<{ slug: string[] }> }
 ) {
-  const key = params.slug.join("/");
+  const { slug } = await params;
+  const key = slug.join("/");
   const { id } = await request.json();
 
   const db = await readDb();
