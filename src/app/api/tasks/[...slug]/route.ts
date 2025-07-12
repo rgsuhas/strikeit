@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { kv } from "@vercel/kv";
+import fs from "fs/promises";
+import path from "path";
 
 interface Task {
   id: string;
@@ -7,18 +9,37 @@ interface Task {
   completed: boolean;
 }
 
+// Check if we're in production (Vercel) or development
+const isProduction = process.env.NODE_ENV === "production";
+
 async function readDb(): Promise<Record<string, Task[]>> {
-  try {
-    const data = await kv.get<Record<string, Task[]>>("tasks");
-    return data || {};
-  } catch {
-    // If KV doesn't exist, return empty object
-    return {};
+  if (isProduction) {
+    try {
+      const data = await kv.get<Record<string, Task[]>>("tasks");
+      return data || {};
+    } catch {
+      return {};
+    }
+  } else {
+    // Development: use file system
+    try {
+      const dbPath = path.resolve(process.cwd(), "db/tasks.json");
+      const data = await fs.readFile(dbPath, "utf-8");
+      return JSON.parse(data);
+    } catch {
+      return {};
+    }
   }
 }
 
 async function writeDb(data: Record<string, Task[]>) {
-  await kv.set("tasks", data);
+  if (isProduction) {
+    await kv.set("tasks", data);
+  } else {
+    // Development: use file system
+    const dbPath = path.resolve(process.cwd(), "db/tasks.json");
+    await fs.writeFile(dbPath, JSON.stringify(data, null, 2));
+  }
 }
 
 export async function GET(
