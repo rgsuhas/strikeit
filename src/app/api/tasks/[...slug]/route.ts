@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { kv } from "@vercel/kv";
+import { Redis } from "@upstash/redis";
+
+// Initialize Redis
+const redis = Redis.fromEnv();
 
 const RATE_LIMIT = 10;
 const RATE_WINDOW = 60 * 1000; // 1 minute
@@ -29,7 +32,7 @@ function checkRateLimit(ip: string) {
 }
 
 async function readStore(listKey: string): Promise<Task[]> {
-  const data = await kv.get<string>(`list:${listKey}`);
+  const data = await redis.get<string>(`list:${listKey}`);
   if (!data) return [];
   try {
     return JSON.parse(data) as Task[];
@@ -39,7 +42,7 @@ async function readStore(listKey: string): Promise<Task[]> {
 }
 
 async function writeStore(listKey: string, tasks: Task[]) {
-  await kv.set(`list:${listKey}`, JSON.stringify(tasks));
+  await redis.set(`list:${listKey}`, JSON.stringify(tasks));
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
