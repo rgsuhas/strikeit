@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs/promises";
-import path from "path";
-
-const dbPath = path.resolve(process.cwd(), "db/tasks.json");
+import { kv } from "@vercel/kv";
 
 interface Task {
   id: string;
@@ -12,16 +9,16 @@ interface Task {
 
 async function readDb(): Promise<Record<string, Task[]>> {
   try {
-    const data = await fs.readFile(dbPath, "utf-8");
-    return JSON.parse(data);
+    const data = await kv.get<Record<string, Task[]>>("tasks");
+    return data || {};
   } catch {
-    // If file doesn't exist, return empty object
+    // If KV doesn't exist, return empty object
     return {};
   }
 }
 
 async function writeDb(data: Record<string, Task[]>) {
-  await fs.writeFile(dbPath, JSON.stringify(data, null, 2));
+  await kv.set("tasks", data);
 }
 
 export async function GET(
