@@ -44,23 +44,23 @@ async function writeStore(store: Store) {
   await fs.writeFile(DB_PATH, JSON.stringify(store, null, 2), "utf8");
 }
 
-export async function GET(req: NextRequest, context: { params: { slug?: string[] } }) {
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+export async function GET(req: NextRequest, { params }: any) {
   const ip = getIP(req);
   if (checkRateLimit(ip)) {
     return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
   }
-  const { params } = context;
   const key = getListKey(params?.slug);
   const store = await readStore();
   return NextResponse.json(store[key] || []);
 }
 
-export async function POST(req: NextRequest, context: { params: { slug?: string[] } }) {
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+export async function POST(req: NextRequest, { params }: any) {
   const ip = getIP(req);
   if (checkRateLimit(ip)) {
     return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
   }
-  const { params } = context;
   const key = getListKey(params?.slug);
   const { text } = await req.json();
   if (!text || typeof text !== "string") {
@@ -73,12 +73,12 @@ export async function POST(req: NextRequest, context: { params: { slug?: string[
   return NextResponse.json(newTask);
 }
 
-export async function PUT(req: NextRequest, context: { params: { slug?: string[] } }) {
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+export async function PUT(req: NextRequest, { params }: any) {
   const ip = getIP(req);
   if (checkRateLimit(ip)) {
     return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
   }
-  const { params } = context;
   const key = getListKey(params?.slug);
   const { id, text, completed } = await req.json();
   if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
@@ -90,12 +90,12 @@ export async function PUT(req: NextRequest, context: { params: { slug?: string[]
   return NextResponse.json({ success: true });
 }
 
-export async function DELETE(req: NextRequest, context: { params: { slug?: string[] } }) {
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+export async function DELETE(req: NextRequest, { params }: any) {
   const ip = getIP(req);
   if (checkRateLimit(ip)) {
     return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
   }
-  const { params } = context;
   const key = getListKey(params?.slug);
   const { id } = await req.json();
   if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
@@ -103,4 +103,4 @@ export async function DELETE(req: NextRequest, context: { params: { slug?: strin
   store[key] = (store[key] || []).filter(t => t.id !== id);
   await writeStore(store);
   return NextResponse.json({ success: true });
-} 
+}

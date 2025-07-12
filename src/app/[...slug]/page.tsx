@@ -1,13 +1,10 @@
 "use client";
 import ToDoList from "../../components/ToDoList";
+import { useParams } from "next/navigation";
 
-type Props = {
-  params: {
-    slug?: string[];
-  };
-};
-
-export default function ListPage({ params }: Props) {
-  const listKey = params.slug?.join("/") || "home";
+export default function ListPage() {
+  const params = useParams();
+  const slug = params.slug as string[] | undefined;
+  const listKey = slug?.join("/") || "home";
   return <ToDoList listKey={listKey} />;
 } 
