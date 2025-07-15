@@ -60,3 +60,4 @@ Visit [http://localhost:3000](http://localhost:3000) and start your list!
 ## Deploy
 
 Deploy instantly on [Vercel](https://vercel.com/) (free tier works great).
+

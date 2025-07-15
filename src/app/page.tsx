@@ -6,7 +6,7 @@ export default function Home() {
   const [slug, setSlug] = useState("");
   const router = useRouter();
 
-  const handleGo = (e: React.FormEvent) => {
+  const handleEnt = (e: React.FormEvent) => {
     e.preventDefault();
     if (slug.trim()) {
       router.push(`/${slug.trim()}`);
@@ -38,10 +38,9 @@ export default function Home() {
           strikeit
         </h1>
         <div style={{ fontSize: 20, color: "#aaa", marginBottom: 32 }}>
-          The easiest way to share to-do lists online
-        </div>
+Share To-Do lists online: the easy way   </div>
         <form
-          onSubmit={handleGo}
+          onSubmit={handleEnt}
           style={{
             display: "flex",
             alignItems: "center",
@@ -53,19 +52,19 @@ export default function Home() {
             style={{
               background: "#1a1a1a",
               border: "1px solid #333",
-              borderRadius: 4,
+              borderRadius: 7,
               padding: "8px 12px",
               fontSize: 16,
               color: "#aaa",
             }}
           >
-            strikeit.com/
+            strikeit-dun.vercel.app/
           </span>
           <input
             type="text"
             value={slug}
             onChange={(e) => setSlug(e.target.value)}
-            placeholder="your-list"
+            placeholder="your-tasks"
             style={{
               padding: "8px 12px",
               fontSize: 16,
@@ -88,11 +87,11 @@ export default function Home() {
               cursor: "pointer",
             }}
           >
-            Go!
+            ⇧
           </button>
         </form>
         <div style={{ color: "#777", fontSize: 15, marginBottom: 32 }}>
-          No login required
+          No login needed 
         </div>
       </main>
       <footer
