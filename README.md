@@ -1,6 +1,6 @@
-# [strikeit🔗](https://strikeit-dun.vercel.app)
+# [strikeit](https://strikeit-dun.vercel.app)
 
-[Dontpad🔗](https://dontpad.com/) but for your To Do list 
+[Dontpad](https://dontpad.com/) but for your To Do list 
 
 The simplest way to share to-do lists online. Minimal, fast, and free.
 
