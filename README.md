@@ -1,4 +1,4 @@
-# [strikeit](https://strikeit-dun.vercel.app)
+# [strikeit](https://rg-strikeit.vercel.app)
 
 [Dontpad](https://dontpad.com/) but for your To Do list 
 
