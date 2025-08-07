@@ -4,7 +4,8 @@ A minimal, shareable to-do list app. Create lists instantly and share them via U
 
 **Live Demo**: [https://rg-strikeit.vercel.app](https://rg-strikeit.vercel.app)
 
-![Homepage](img/image.png)
+![Homepage](<img width="605" height="603" alt="Screenshot from 2025-08-08 02-22-08" src="https://github.com/user-attachments/assets/9dc98910-1fc9-47ed-b2b3-df5b1756d9ac" />
+)
 
 ## Features
 
