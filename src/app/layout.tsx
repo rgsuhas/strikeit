@@ -36,7 +36,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Strikeit – Minimal Online To-Do Lists",
     description: "Create and share to-do lists instantly. No login, minimal UI, instant sync. Try Strikeit now!",
-    url: "https://strikeit-dun.vercel.app",
+    url: "https://rg-strikeit.vercel.app/",
     images: [
       {
         url: "/img/image.png",

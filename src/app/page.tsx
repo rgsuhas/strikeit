@@ -58,13 +58,13 @@ Share To-Do lists online: the easy way   </div>
               color: "#aaa",
             }}
           >
-            strikeit-dun.vercel.app/
+            rg-strikeit.vercel.app/
           </span>
           <input
             type="text"
             value={slug}
             onChange={(e) => setSlug(e.target.value)}
-            placeholder="your-tasks"
+            placeholder="your-secret-listp"
             style={{
               padding: "8px 12px",
               fontSize: 16,
