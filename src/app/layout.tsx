@@ -28,6 +28,11 @@ export const metadata: Metadata = {
     "task manager",
     "no login todo"
   ],
+  icons: {
+    icon: '/s-dark.svg',
+    shortcut: '/s-dark.svg',
+    apple: '/s-dark.svg',
+  },
   openGraph: {
     title: "Strikeit – Minimal Online To-Do Lists",
     description: "Create and share to-do lists instantly. No login, minimal UI, instant sync. Try Strikeit now!",

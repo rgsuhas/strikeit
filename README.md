@@ -1,65 +1,42 @@
-# [strikeit🔗](https://strikeit-dun.vercel.app)
+# Strikeit
 
-[Dontpad🔗](https://dontpad.com/) but for your To Do list 
+A minimal, shareable to-do list app. Create lists instantly and share them via URL.
 
-The simplest way to share to-do lists online. Minimal, fast, and free.
+**Live Demo**: [https://rg-strikeit.vercel.app](https://rg-strikeit.vercel.app)
 
-![strikeit screenshot](img/image.png)
-![sample list](img/image2.png)
-
-
----
+![Homepage](img/image.png)
 
 ## Features
 
-- 🔗 **Shareable lists by URL** (e.g. `/my-list`)
-- ⚡ **Instant sync & persistence** (Upstash Redis)
-- 🕶️ **Minimal, dark-mode ready UI**
-- 🚫 **No login required**
-- 🛡️ **Rate-limited API**
-- ☁️ **Deploys easily on Vercel**
+- Share lists via custom URLs
+- Real-time sync with Redis
+- Dark-mode UI
+- No login required
+- Rate-limited API
 
----
+## Setup
 
-## Getting Started
-
-### 1. Set up Upstash Redis
-
-1. [Create a free Upstash account](https://console.upstash.com/)
-2. Create a new Redis database
-3. Copy your Redis REST URL and token
-
-### 2. Configure Environment Variables
-
-Create a `.env.local` file in the root directory:
+1. Create a free database at [Upstash](https://console.upstash.com/)
+2. Add credentials to `.env.local`:
 
 ```bash
-UPSTASH_REDIS_REST_URL=your_redis_url_here
-UPSTASH_REDIS_REST_TOKEN=your_redis_token_here
+UPSTASH_REDIS_REST_URL=your_redis_url
+UPSTASH_REDIS_REST_TOKEN=your_redis_token
 ```
 
-### 3. Install Dependencies & Run Locally
+3. Install and run:
 
 ```bash
 npm install
 npm run dev
 ```
 
-Visit [http://localhost:3000](http://localhost:3000) and start your list!
-
----
-
-## Project Structure
-
-- [`src/app`](src/app) — Next.js app directory (routing, pages, API)
-- [`src/components/ToDoList.tsx`](src/components/ToDoList.tsx) — Main to-do list UI component
-- [`src/app/api/tasks/[...slug]/route.ts`](src/app/api/tasks/[...slug]/route.ts) — REST API for tasks (CRUD, Upstash Redis)
-- [`db/tasks.json`](db/tasks.json) — Example local data (not used in production)
-- [`public/`](public/) — Static assets
-
----
+Visit [http://localhost:3000](http://localhost:3000)
 
 ## Deploy
 
-Deploy instantly on [Vercel](https://vercel.com/) (free tier works great).
+Deploy on [Vercel](https://vercel.com/) with one click.
 
+## License
+
+MIT
