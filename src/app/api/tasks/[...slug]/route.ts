@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Redis } from "@upstash/redis";
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic';
+
 interface Task {
   id: string;
   text: string;

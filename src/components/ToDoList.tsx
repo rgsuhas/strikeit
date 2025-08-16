@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { useTasks } from "../UseTasks";
+import { useTasks } from "./UseTasks";
 import { ListHeader } from "./ListHeader";
 import { TaskInput } from "./TaskInput";
 import { TaskItem } from "./TaskItem";
