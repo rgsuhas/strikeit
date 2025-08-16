@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { Task } from "./ToDoList";
+import type { Task } from "./ToDoList/types";
 
 export function useTasks(listKey: string) {
   const [tasks, setTasks] = useState<Task[]>([]);
