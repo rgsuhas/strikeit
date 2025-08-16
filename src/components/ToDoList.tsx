@@ -7,7 +7,7 @@ import { TaskItem } from "./TaskItem";
 import { StatusInfo } from "./StatusInfo";
 import { EmptyState } from "./EmptyState";
 import { TaskCount } from "./TaskCount";
-import { Task } from "./types";
+
 
 export default function ToDoList({ listKey }: { listKey: string }) {
   const {

@@ -10,6 +10,11 @@ interface Task {
   completed: boolean;
 }
 
+interface TaskUpdate {
+  id: string;
+  completed: boolean;
+}
+
 // Initialize Redis client
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -47,7 +52,7 @@ export async function PUT(request: NextRequest) {
   
   // Apply all updates
   tasks = tasks.map((task) => {
-    const update = updates.find((u: any) => u.id === task.id);
+    const update = updates.find((u: TaskUpdate) => u.id === task.id);
     return update ? { ...task, completed: update.completed } : task;
   });
   
