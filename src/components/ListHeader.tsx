@@ -1,5 +1,7 @@
+"use client";
 import React from "react";
-import { ArrowPathIcon } from "@heroicons/react/24/outline";
+import Link from "next/link";
+import { ArrowLeftIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
 
 interface ListHeaderProps {
   listKey: string;
@@ -9,22 +11,32 @@ interface ListHeaderProps {
 
 export function ListHeader({ listKey, onReset, loading }: ListHeaderProps) {
   return (
-    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
-      <div>
-        <h1 className="text-2xl font-semibold text-white">
-          To-Do List
-        </h1>
-        <p className="text-zinc-400 mt-1">
-          {listKey}
-        </p>
+    <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center gap-3">
+        <Link
+          href="/"
+          className="p-2 rounded-lg text-zinc-500 hover:text-white hover:bg-zinc-800 transition-all duration-200"
+          title="Back to home"
+        >
+          <ArrowLeftIcon className="h-4 w-4" />
+        </Link>
+        <div>
+          <div className="flex items-center gap-2 text-sm text-zinc-600">
+            <span>strikeit</span>
+            <span>/</span>
+          </div>
+          <h1 className="text-xl font-semibold text-white leading-tight">
+            {listKey}
+          </h1>
+        </div>
       </div>
       <button
         onClick={onReset}
         disabled={loading}
-        className="inline-flex items-center gap-2 px-4 py-2.5 bg-zinc-800 text-white rounded-lg font-medium border border-zinc-700 hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-        title="Reset List"
+        className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-zinc-500 hover:text-white hover:bg-zinc-800 border border-transparent hover:border-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
+        title="Reset list"
       >
-        <ArrowPathIcon className="h-5 w-5" />
+        <ArrowPathIcon className="h-4 w-4" />
         <span className="hidden sm:inline">Reset</span>
       </button>
     </div>
