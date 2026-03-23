@@ -1,49 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Redis } from "@upstash/redis";
+import { getSupabaseAdmin } from "../../../../lib/supabase";
 
-// Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic';
-
-interface Task {
-  id: string;
-  text: string;
-  completed: boolean;
-}
-
-// Initialize Redis client
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-});
-
-async function readDb(): Promise<Record<string, Task[]>> {
-  try {
-    const data = await redis.get<Record<string, Task[]>>("tasks");
-    return data || {};
-  } catch (error) {
-    console.error("Redis read error:", error);
-    return {};
-  }
-}
-
-async function writeDb(data: Record<string, Task[]>) {
-  try {
-    await redis.set("tasks", data);
-  } catch (error) {
-    console.error("Redis write error:", error);
-    throw new Error("Failed to save data");
-  }
-}
 
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ slug: string[] }> }
 ) {
   const { slug } = await params;
-  const key = slug.join("/");
-  const db = await readDb();
-  const tasks: Task[] = db[key] || [];
-  return NextResponse.json(tasks);
+  const listKey = slug.join("/");
+  const supabase = getSupabaseAdmin();
+
+  const { data, error } = await supabase
+    .from("tasks")
+    .select("*")
+    .eq("list_key", listKey)
+    .order("position", { ascending: true });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+  return NextResponse.json(data ?? []);
 }
 
 export async function POST(
@@ -51,17 +28,29 @@ export async function POST(
   { params }: { params: Promise<{ slug: string[] }> }
 ) {
   const { slug } = await params;
-  const key = slug.join("/");
-  const { text } = await request.json();
-  const newTask: Task = { id: Date.now().toString(), text, completed: false };
+  const listKey = slug.join("/");
+  const { text } = await request.json() as { text: string };
+  const supabase = getSupabaseAdmin();
 
-  const db = await readDb();
-  const tasks: Task[] = db[key] || [];
-  tasks.push(newTask);
-  db[key] = tasks;
-  await writeDb(db);
+  const { data: existing } = await supabase
+    .from("tasks")
+    .select("position")
+    .eq("list_key", listKey)
+    .order("position", { ascending: false })
+    .limit(1);
 
-  return NextResponse.json(newTask);
+  const nextPosition = existing && existing.length > 0 ? existing[0].position + 1 : 0;
+
+  const { data, error } = await supabase
+    .from("tasks")
+    .insert({ list_key: listKey, text, completed: false, position: nextPosition })
+    .select()
+    .single();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+  return NextResponse.json(data);
 }
 
 export async function PUT(
@@ -69,24 +58,42 @@ export async function PUT(
   { params }: { params: Promise<{ slug: string[] }> }
 ) {
   const { slug } = await params;
-  const key = slug.join("/");
-  const { id, text, completed } = await request.json();
+  const listKey = slug.join("/");
+  const body = await request.json() as { id: string; text?: string; completed?: boolean };
+  const { id, text, completed } = body;
+  const supabase = getSupabaseAdmin();
 
-  const db = await readDb();
-  let tasks: Task[] = db[key] || [];
-  tasks = tasks.map((task) => {
-    if (task.id === id) {
-      return {
-        ...task,
-        ...(text !== undefined && { text }),
-        ...(completed !== undefined && { completed }),
-      };
-    }
-    return task;
-  });
-  db[key] = tasks;
-  await writeDb(db);
+  const updates: { text?: string; completed?: boolean } = {};
+  if (text !== undefined) updates.text = text;
+  if (completed !== undefined) updates.completed = completed;
 
+  const { error } = await supabase
+    .from("tasks")
+    .update(updates)
+    .eq("id", id)
+    .eq("list_key", listKey);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+  return NextResponse.json({ success: true });
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ slug: string[] }> }
+) {
+  const { slug } = await params;
+  const listKey = slug.join("/");
+  const { orderedIds } = await request.json() as { orderedIds: string[] };
+  const supabase = getSupabaseAdmin();
+
+  const updates = orderedIds.map((id, index) => ({ id, list_key: listKey, position: index }));
+  const { error } = await supabase.from("tasks").upsert(updates, { onConflict: "id" });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
   return NextResponse.json({ success: true });
 }
 
@@ -95,22 +102,18 @@ export async function DELETE(
   { params }: { params: Promise<{ slug: string[] }> }
 ) {
   const { slug } = await params;
-  const key = slug.join("/");
-  const { id, reset } = await request.json();
+  const listKey = slug.join("/");
+  const body = await request.json() as { id?: string; reset?: boolean };
+  const { id, reset } = body;
+  const supabase = getSupabaseAdmin();
 
-  const db = await readDb();
-  
   if (reset) {
-    // Reset entire list
-    db[key] = [];
-  } else {
-    // Delete specific task
-    let tasks: Task[] = db[key] || [];
-    tasks = tasks.filter((task) => task.id !== id);
-    db[key] = tasks;
+    const { error } = await supabase.from("tasks").delete().eq("list_key", listKey);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  } else if (id) {
+    const { error } = await supabase.from("tasks").delete().eq("id", id).eq("list_key", listKey);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  
-  await writeDb(db);
 
   return NextResponse.json({ success: true });
 }

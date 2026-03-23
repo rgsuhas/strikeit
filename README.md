@@ -1,32 +1,43 @@
 # Strikeit
 
-A minimal, shareable to-do list app. Create lists instantly and share them via URL.
+A minimal, shareable to-do list app. Create lists instantly and share them via URL. Powered by Supabase Postgres + Realtime.
 
 **Live Demo**: [https://rg-strikeit.vercel.app/](https://rg-strikeit.vercel.app/)
-
-![Homepage](img/image.png)
-![list](img/list.png)
-
 
 ## Features
 
 - Share lists via custom URLs
-- Real-time sync with Redis
-- Dark-mode UI
+- Real-time sync via Supabase Realtime (no polling)
+- Drag-and-drop task reordering
+- Dark-mode premium UI
 - No login required
-- Rate-limited API
+- Optimistic updates with rollback
 
 ## Setup
 
-1. Create a free database at [Upstash](https://console.upstash.com/)
-2. Add credentials to `.env.local`:
+### 1. Create a Supabase project
+
+1. Go to [supabase.com](https://supabase.com) and create a free project
+2. In the **SQL Editor**, run the contents of `supabase/schema.sql` to create the tasks table and enable realtime
+
+### 2. Set environment variables
+
+Copy `.env.example` to `.env.local` and fill in your Supabase credentials:
 
 ```bash
-UPSTASH_REDIS_REST_URL=your_redis_url
-UPSTASH_REDIS_REST_TOKEN=your_redis_token
+cp .env.example .env.local
 ```
 
-3. Install and run:
+```bash
+# .env.local
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+```
+
+Find these in your Supabase project: **Settings → API**
+
+### 3. Install and run
 
 ```bash
 npm install
@@ -37,7 +48,11 @@ Visit [http://localhost:3000](http://localhost:3000)
 
 ## Deploy
 
-Deploy on [Vercel](https://vercel.com/) with one click.
+Deploy on [Vercel](https://vercel.com/) and add the three Supabase env vars in your project settings.
+
+## Database Schema
+
+See `supabase/schema.sql` — run it in your Supabase SQL Editor once.
 
 ## License
 

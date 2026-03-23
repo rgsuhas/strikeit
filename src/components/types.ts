@@ -1,5 +1,8 @@
 export interface Task {
-  id: string;
-  text: string;
-  completed: boolean;
+  id: string
+  list_key: string
+  text: string
+  completed: boolean
+  position: number
+  created_at: string
 }
